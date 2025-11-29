@@ -19,7 +19,7 @@ interface SocialContextType {
   loading: boolean;
   error?: string;
   setPage: (page: number) => void;
-  refresh: () => Promise<void>;
+  refresh: () => void;
   deleteComment: (id: number) => Promise<void>;
 }
 

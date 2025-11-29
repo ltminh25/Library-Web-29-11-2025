@@ -27,8 +27,7 @@ import { Add, Edit, Delete, CheckCircle, AttachMoney, Receipt } from "@mui/icons
 import { useFines } from "../context/FineContext";
 import type { FineCreate } from "../context/FineContext";
 
-/* 🔧 Hàm tiện ích định dạng ngày */
-const formatDate = (arr: number[] | null) => {
+const formatDateFines = (arr: number[] | null) => {
   if (!arr) return "-";
   const [year, month, day, hour, minute] = arr;
   const date = new Date(year, month - 1, day, hour, minute);
@@ -232,10 +231,10 @@ const FineManagement = () => {
                     {fine.transactionId}
                   </TableCell>
                   <TableCell sx={{ fontFamily: 'Roboto, sans-serif', color: '#718096' }}>
-                    {formatDate(fine.issuedDate)}
+                    {formatDateFines(fine.issuedDate)}
                   </TableCell>
                   <TableCell sx={{ fontFamily: 'Roboto, sans-serif', color: '#718096' }}>
-                    {formatDate(fine.paidDate)}
+                    {formatDateFines(fine.paidDate)}
                   </TableCell>
                   <TableCell sx={{ fontFamily: 'Roboto, sans-serif', color: '#718096', maxWidth: 200 }}>
                     {fine.reason}

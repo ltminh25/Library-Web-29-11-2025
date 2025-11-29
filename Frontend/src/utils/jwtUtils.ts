@@ -4,6 +4,7 @@ import { jwtDecode } from 'jwt-decode';
  * Interface for JWT payload structure from backend
  */
 export interface JWTPayload {
+  userId: number;
   sub: string; // username
   role: 'READER' | 'STAFF' | 'ADMIN';
   username: string; // username (duplicate of sub)
@@ -62,4 +63,17 @@ export const getTokenExpirationTime = (token: string): Date | null => {
   if (!decoded || !decoded.exp) return null;
   
   return new Date(decoded.exp * 1000);
+};
+
+export const getUserIdFromToken = (): number | null => {
+  const token = localStorage.getItem("access_token"); 
+  if (!token) return null;
+
+  try {
+    const decoded = decodeToken(token);
+    return decoded?.userId ?? null;
+  } catch (error) {
+    console.error("Token không hợp lệ:", error);
+    return null;
+  }
 };

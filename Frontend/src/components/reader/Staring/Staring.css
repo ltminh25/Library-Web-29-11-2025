@@ -1,0 +1,36 @@
+.star-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: system-ui, sans-serif;
+}
+
+.star {
+  font-size: 1.2em;
+  transition: color 0.2s ease;
+}
+
+.star.filled {
+  color: #ffc107; /* vàng */
+}
+
+.star.empty {
+  color: #e0e0e0; /* xám */
+}
+
+.rating-text {
+  margin-left: 6px;
+  font-size: 0.9em;
+  color: #555;
+  font-weight: 500;
+}
+
+.star-rating.interactive .star.clickable:hover {
+  transform: scale(1.2);
+  transition: 0.2s;
+}
+
+/* Kích thước */
+.star-rating--sm .star { font-size: 0.9em; }
+.star-rating--md .star { font-size: 1.1em; }
+.star-rating--lg .star { font-size: 1.4em; }

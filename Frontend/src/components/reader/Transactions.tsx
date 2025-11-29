@@ -11,7 +11,7 @@ import QRCode from "react-qr-code";
 import { useReaderTransactions } from "../context/ReaderTransactionContext";
 import "./Transactions.css";
 
-function formatDate(arr?: number[] | null) {
+function formatDateTransaction(arr?: number[] | null) {
   if (!arr) return "—";
   const [y, m, d, hh = 0, mm = 0] = arr;
   return `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${y} ${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
@@ -49,7 +49,7 @@ const Transactions: React.FC = () => {
                 </span>
               </div>
               <div className="transaction-date">
-                <FaClock /> {formatDate(t.borrowDate)}
+                <FaClock /> {formatDateTransaction(t.borrowDate)}
               </div>
             </div>
 
@@ -57,8 +57,8 @@ const Transactions: React.FC = () => {
               <div className="transaction-info">
                 <p><FaUser /> <strong>Người mượn:</strong> {t.readerName}</p>
                 <p><FaUser /> <strong>Nhân viên:</strong> {t.staffName}</p>
-                <p><FaClock /> <strong>Hạn trả:</strong> {formatDate(t.dueDate)}</p>
-                <p><FaClock /> <strong>Ngày trả:</strong> {formatDate(t.returnDate)}</p>
+                <p><FaClock /> <strong>Hạn trả:</strong> {formatDateTransaction(t.dueDate)}</p>
+                <p><FaClock /> <strong>Ngày trả:</strong> {formatDateTransaction(t.returnDate)}</p>
                 {t.fineAmount && (
                   <p className="transaction-fine">
                     💸 <strong>Phí phạt:</strong> {t.fineAmount.toLocaleString()}đ

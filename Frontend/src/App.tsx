@@ -3,10 +3,7 @@ import Login from './components/Login'
 import PrivateRoute from './route/privateRoute'
 import RoleBasedRedirect from './route/RoleBasedRedirect'
 import Register from './components/Register'
-import Layout from './components/layout/Layout'
 import StaffLayout from './components/layout/StaffLayout'
-import BooksPage from './components/BooksPage'
-import BorrowHistoryPage from './components/BorrowHistoryPage'
 import './App.css'
 import BookManagement from './components/BookManagement'
 import { BookProvider } from './components/context/BookContext'
@@ -25,7 +22,6 @@ import FineManagement from './components/StaffPages/FineManagement'
 import StaffDashboard from './components/StaffPages/StaffDashboard'
 // Reader components
 import Reader from './components/reader/Reader'
-import ReaderDashboard from './components/reader/Dashboard'
 import ReaderLanding from './components/reader/Landing'
 import ReaderBooks from './components/reader/Books'
 import ReaderTransactions from './components/reader/Transactions'
@@ -77,16 +73,6 @@ function App() {
                           />
                           
                           {/* Legacy routes - keeping for backward compatibility */}
-                          <Route path="/books" element={
-                            <PrivateRoute>
-                              <Layout><BooksPage /></Layout>
-                            </PrivateRoute>
-                          }/>
-                          <Route path="/history" element={ 
-                            <PrivateRoute>
-                              <Layout><BorrowHistoryPage /></Layout>
-                            </PrivateRoute>
-                          }/>
 
                           {/* Staff Routes */}
                           <Route path="/staff" element={
@@ -142,13 +128,12 @@ function App() {
                           </PrivateRoute>
                         }>
                           <Route index element={<ReaderLanding />} />
-                          <Route path="dashboard" element={<ReaderDashboard />} />
                           <Route path="books" element={<ReaderBooks />} />
                           <Route path="transactions" element={<ReaderTransactions />} />
                           <Route path="books/:id" element={<BookDetail />} />
                           <Route path="profile" element={<UserProfile />} />
                           <Route path="notifications" element={<ReaderNotifications />} />
-                          </Route>
+                        </Route>
                           
                           {/* Wildcard route - redirect to role-based page */}
                           <Route path="*" element={

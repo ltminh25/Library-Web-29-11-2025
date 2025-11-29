@@ -93,8 +93,7 @@ const StaffTransaction: React.FC<{ id?: number }> = () => {
     }
   }, [open, allBooks.length]);
 
-  // ✅ Định dạng ngày từ mảng [yyyy, mm, dd, hh, mm]
-  const formatDate = (arr?: number[] | null) => {
+  const formatDateStaffTransaction = (arr?: number[] | null) => {
     if (!arr || arr.length < 3) return "-";
     const [y, m, d, hh = 0, mm = 0] = arr;
     return `${d.toString().padStart(2, "0")}/${m
@@ -286,13 +285,13 @@ const StaffTransaction: React.FC<{ id?: number }> = () => {
                   <strong style={{ color: '#1A202C' }}>Nhân viên:</strong> {t.staffName}
                 </Typography>
                 <Typography sx={{ fontFamily: 'Roboto, sans-serif', color: '#718096' }}>
-                  <strong style={{ color: '#1A202C' }}>Ngày mượn:</strong> {formatDate(t.borrowDate)}
+                  <strong style={{ color: '#1A202C' }}>Ngày mượn:</strong> {formatDateStaffTransaction(t.borrowDate)}
                 </Typography>
                 <Typography sx={{ fontFamily: 'Roboto, sans-serif', color: '#718096' }}>
-                  <strong style={{ color: '#1A202C' }}>Hạn trả:</strong> {formatDate(t.dueDate)}
+                  <strong style={{ color: '#1A202C' }}>Hạn trả:</strong> {formatDateStaffTransaction(t.dueDate)}
                 </Typography>
                 <Typography sx={{ fontFamily: 'Roboto, sans-serif', color: '#718096' }}>
-                  <strong style={{ color: '#1A202C' }}>Ngày trả:</strong> {formatDate(t.returnDate)}
+                  <strong style={{ color: '#1A202C' }}>Ngày trả:</strong> {formatDateStaffTransaction(t.returnDate)}
                 </Typography>
                 <Typography sx={{ fontFamily: 'Roboto, sans-serif', color: '#718096' }}>
                   <strong style={{ color: '#1A202C' }}>Ghi chú:</strong> {t.note || "-"}

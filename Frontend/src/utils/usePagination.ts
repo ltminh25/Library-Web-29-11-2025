@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-
+import { useBooks } from '../components/context/BookContext';
 export interface UsePaginationResult<T> {
   page: number;
   rowsPerPage: number;
@@ -10,9 +10,10 @@ export interface UsePaginationResult<T> {
 }
 
 export default function usePagination<T>(items: T[], rows = 10): UsePaginationResult<T> {
+  const {totalPages, totalItems} = useBooks();
   const [page, setPage] = useState(0);
   const rowsPerPage = rows;
-  const total = items?.length ?? 0;
+  const total = totalItems;
 
   // Ensure page is valid when items change (e.g., filters applied)
   useEffect(() => {

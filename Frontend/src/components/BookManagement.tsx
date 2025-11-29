@@ -25,12 +25,25 @@ import { useBooks } from "./context/BookContext";
 import { publicAuthorsApi, publicPublishersApi, staffCategoriesApi } from "../api";
 import type { Author, Publisher, Category as CategoryType } from "../types/api.types";
 import TablePagination from "@mui/material/TablePagination";
-import usePagination from "../utils/usePagination";
 import ConfirmDialog from "./common/ConfirmDialog";
 import React from "react";
+import StarRating from "./reader/Staring/Staring";
+import { green } from "@mui/material/colors";
 
 const BookManagement = () => {
-  const { books, loading, addBook, updateBook, deleteBook, refreshBooks } = useBooks();
+  const {
+    books,
+    loading,
+    refreshBooks,
+    changePage,        
+    currentPage,       
+    totalItems,        
+    totalPages,
+    pageSize = 10,
+    deleteBook,
+    updateBook,
+    addBook,
+  } = useBooks();
   const PLACEHOLDER_IMG = React.useMemo(() =>
     'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(
       `<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56"><rect width="100%" height="100%" fill="#EDF2F7"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#A0AEC0" font-family="Arial" font-size="10">No Image</text></svg>`
@@ -40,8 +53,6 @@ const BookManagement = () => {
   useEffect(() => {
     refreshBooks();
   }, [refreshBooks]);
-
-  
 
   const [openDialog, setOpenDialog] = useState(false);
   const [editingBookId, setEditingBookId] = useState<number | null>(null);
@@ -57,16 +68,16 @@ const BookManagement = () => {
     publishYear: 0,
     quantity: 0,
     status: "",
-    coverPhotoUrl: "", // 🆕 Thêm URL ảnh bìa
-    pdfUrl: "", // 🆕 Thêm URL file PDF
+    coverPhotoUrl: "", 
+    pdfUrl: "", 
+    averageRating: "",  
+    ratingCount: "",
   });
 
-  // Dữ liệu chọn cho Author/Category/Publisher
   const [authors, setAuthors] = useState<Author[]>([]);
   const [categories, setCategories] = useState<CategoryType[]>([]);
   const [publishers, setPublishers] = useState<Publisher[]>([]);
 
-  // Tải danh sách cho select khi mở trang
   useEffect(() => {
     (async () => {
       try {
@@ -82,7 +93,6 @@ const BookManagement = () => {
     })();
   }, []);
 
-  // Khi danh sách đã có và đang ở chế độ edit, map tên -> id nếu chưa có
   useEffect(() => {
     if (!editingBookId) return;
     const target = books.find(b => b.id === editingBookId);
@@ -109,6 +119,8 @@ const BookManagement = () => {
         status: bookToEdit.status,
         coverPhotoUrl: bookToEdit.coverPhotoUrl || "", // 🆕
         pdfUrl: bookToEdit.pdfUrl || "", // 🆕
+        averageRating: bookToEdit.averageRting || "",
+        ratingCount: bookToEdit.ratingCount || "",
       });
     } else {
       setEditingBookId(null);
@@ -122,6 +134,8 @@ const BookManagement = () => {
         status: "",
         coverPhotoUrl: "", // 🆕
         pdfUrl: "", // 🆕
+        averageRating: "",
+        ratingCount: "",
       });
     }
     setOpenDialog(true);
@@ -196,13 +210,22 @@ const BookManagement = () => {
     await refreshBooks();
   };
 
+  
+  const pagedBooks = books;
+
+  // Xử lý chuyển trang
+  const handlePageChange = (
+    event: React.MouseEvent<HTMLButtonElement> | null,
+    newPage: number
+  ) => {
+    changePage(newPage); // ← Gọi API lấy trang mới
+  };
+
   const filteredBooks = books.filter(book => 
     book.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     book.author?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     book.category?.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const { page, rowsPerPage, total, data: pagedBooks, handleChangePage } = usePagination(filteredBooks, 10);
 
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><Typography>Đang tải dữ liệu...</Typography></Box>;
 
@@ -301,6 +324,8 @@ const BookManagement = () => {
               <TableCell sx={{ fontWeight: 700, color: '#1A202C', fontFamily: 'Roboto, sans-serif' }}>Số lượng</TableCell>
               <TableCell sx={{ fontWeight: 700, color: '#1A202C', fontFamily: 'Roboto, sans-serif', width: 92, minWidth: 92 }}>Ảnh bìa</TableCell>
               <TableCell sx={{ fontWeight: 700, color: '#1A202C', fontFamily: 'Roboto, sans-serif', whiteSpace: 'nowrap', width: 180, minWidth: 160 }}>PDF</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: '#1A202C', fontFamily: 'Roboto, sans-serif' }}>Đánh giá</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: '#1A202C', fontFamily: 'Roboto, sans-serif' }}>Số lượng đánh giá</TableCell>
               <TableCell align="right" sx={{ fontWeight: 700, color: '#1A202C', fontFamily: 'Roboto, sans-serif' }}>Hành động</TableCell>
             </TableRow>
           </TableHead>
@@ -381,6 +406,21 @@ const BookManagement = () => {
                     <Typography sx={{ color: '#CBD5E0', fontFamily: 'Roboto, sans-serif' }}>—</Typography>
                   )}
                 </TableCell>
+                <TableCell>
+                  <StarRating rating={book.averageRating} size="md" />
+                </TableCell>
+                <TableCell>
+                  <Chip
+                    label={book.ratingCount}
+                    size="small"
+                    sx={{
+                      backgroundColor: green,
+                      color: green,
+                      fontWeight: 700,
+                      fontFamily: 'Roboto, sans-serif',
+                    }}
+                  />
+                </TableCell>
                 <TableCell align="right">
                   <IconButton
                     onClick={() => handleOpenDialog(book)}
@@ -458,18 +498,22 @@ const BookManagement = () => {
         </DialogActions>
       </Dialog>
 
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
         <TablePagination
           component="div"
-          count={total}
-          page={page}
-          onPageChange={handleChangePage}
-          rowsPerPage={rowsPerPage}
-          rowsPerPageOptions={[10]}
+          count={totalItems}                   
+          page={currentPage}                   
+          onPageChange={handlePageChange}       
+          rowsPerPage={pageSize}                
+          rowsPerPageOptions={[]}             
+          labelRowsPerPage="Số dòng mỗi trang:"
+          labelDisplayedRows={({ from, to, count }) =>
+            `${from}–${to} của ${count !== -1 ? count : `hơn ${to}`}`
+          }
+
         />
       </Box>
 
-      {/* Dialog thêm/sửa */}
       <Dialog 
         open={openDialog} 
         onClose={handleCloseDialog} 

@@ -6,7 +6,7 @@ export interface Notification {
   title: string;
   body: string;
   status: "READ" | "UNREAD";
-  sentAt: number[]; // [yyyy, MM, dd, hh, mm, ss, ms]
+  sentAt: number[]; 
   senderName: string;
   recipientName: string;
 }
@@ -15,6 +15,7 @@ interface NotificationContextType {
   notifications: Notification[];
   loading: boolean;
   error: string | null;
+  fetchNotifications: () => Promise<void>;
   refreshNotifications: () => Promise<void>;
   markAsRead: (id: number) => Promise<void>;
   markAllAsRead: () => Promise<void>;
@@ -32,9 +33,23 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     setError(null);
     try {
       const res = await notificationApi.getMyNotifications();
-      const data = Array.isArray(res) ? res : (Array.isArray((res as any).data) ? (res as any).data : []);
-      setNotifications(data as any);
+      console.log("Raw notifications response:", res);
+      const rawData = Array.isArray(res) ? res : (Array.isArray((res as any).data) ? (res as any).data : []);
+
+      const mappedNotifications = res.map(item => ({
+        id: item.id,
+        title: item.title || "Không có tiêu đề",
+        body: item.body || "Không có nội dung",
+        status: item.status || "READ",
+        senderName: item.senderName || "Hệ thống",
+        recipientName: item.recipientName,
+        sentAt: item.sentAt,
+      }));
+
+      console.log("Mapped notifications:", mappedNotifications);
+      setNotifications(mappedNotifications);
     } catch (err: any) {
+      console.error("Fetch notifications failed:", err);
       setError(err.message || "Không thể tải thông báo");
       setNotifications([]);
     } finally {
@@ -77,6 +92,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         notifications,
         loading,
         error,
+        fetchNotifications,
         refreshNotifications: fetchNotifications,
         markAsRead,
         markAllAsRead,

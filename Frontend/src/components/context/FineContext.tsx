@@ -42,7 +42,7 @@ export const FineProvider = ({ children }: { children: ReactNode }) => {
       // Handle both array and object responses
       if (Array.isArray(res)) {
         console.log("✅ Setting fines array, length:", res.length);
-        setFines(res);
+        setFines(res as any);
         setError(null); // Clear any previous errors
       } else if (res && typeof res === 'object' && 'items' in res) {
         // Handle paginated response

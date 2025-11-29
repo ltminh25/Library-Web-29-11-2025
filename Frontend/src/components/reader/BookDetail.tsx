@@ -14,8 +14,10 @@ import { commentApi } from "../../api";
 import { useBooks } from "../context/BookContext";
 import type { Book } from "../context/BookContext";
 import "./BookDetail.css";
+import StarRating from "./Staring/Staring";
+import ratingApi from "../../api/ratingApi";
+import { useUsers } from "../context/UserContext";
 
-// Use the centralized Book type from context so Drive links are normalized
 type BookDetailType = Book & {
   description?: string;
   rating?: number;
@@ -30,6 +32,11 @@ interface CommentType {
 
 const BookDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const {users} = useUsers();
+  const [userRating, setUserRating] = useState<number>(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+
   const { fetchBookById } = useBooks();
   const [activeTab, setActiveTab] = useState<"read" | "reviews">("read");
   const [book, setBook] = useState<BookDetailType | null>(null);
@@ -106,7 +113,6 @@ const BookDetail = () => {
     }
   };
 
-  // Edit comment
   const handleEditComment = (commentId: number, content: string) => {
     setEditingId(commentId);
     setEditingContent(content);
@@ -122,6 +128,38 @@ const BookDetail = () => {
       fetchComments();
     } catch {
       alert("Không thể cập nhật bình luận.");
+    }
+  };
+
+  const handleRatingSubmit = async (score: number) => {
+    if (!users) {
+      alert("Vui lòng đăng nhập để đánh giá");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await ratingApi.createRating({
+        bookId: Number(id),
+        score,
+      });
+
+      const newCount = (book?.ratingCount || 0) + 1;
+      const oldTotal = (book?.averageRating || 0) * (book?.ratingCount || 0);
+      const newAverage = (oldTotal + score) / newCount;
+
+      setBook({
+        ...book,
+        averageRating: Number(newAverage.toFixed(1)),
+        ratingCount: newCount,
+      } as BookDetailType);
+
+      setUserRating(score);
+      alert("Cảm ơn bạn đã đánh giá!");
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Không thể gửi đánh giá");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -149,7 +187,20 @@ const BookDetail = () => {
             <span><FaUser /> <strong>Tác giả:</strong> {book.author}</span>
             <span><FaTags /> <strong>Thể loại:</strong> {book.category}</span>
             <span>📦 <strong>Còn lại:</strong> {book.quantity}</span>
-            <span><FaStar color="gold" /> <strong>Đánh giá TB:</strong> {book.rating ?? "?"}</span>
+            <span>
+              <strong>Đánh giá:</strong>{" "}
+              <StarRating 
+                rating={book.averageRating} 
+                size="md" 
+                interactive 
+                onRate={handleRatingSubmit}
+                userRating={userRating}
+                disabled={isSubmitting}
+              />
+            </span>
+            <span>
+              <strong>Số người đánh giá:</strong> {book.ratingCount ?? 0}
+            </span>
             <span>📅 <strong>Năm XB:</strong> {book.publishYear}</span>
           </div>
         </div>

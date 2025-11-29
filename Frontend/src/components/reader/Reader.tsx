@@ -26,6 +26,7 @@ import {
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import notificationApi from '../../api/notificationApi';
 import { decodeToken, type JWTPayload } from '../../utils/jwtUtils';
+import { useNotifications } from '../context/NotificationContext';
 
 const drawerWidth = 240;
 
@@ -161,9 +162,9 @@ const SidebarScroll = styled(Box)({
 export default function Reader() {
   const navigate = useNavigate();
   const location = useLocation();
+  const {notifications, fetchNotifications, markAllAsRead} = useNotifications();
   const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(null);
   const [notificationAnchor, setNotificationAnchor] = useState<null | HTMLElement>(null);
-  const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [userName, setUserName] = useState<string>('Người dùng');
   const [userRole, setUserRole] = useState<string>('Độc giả');
@@ -181,41 +182,6 @@ export default function Reader() {
     }
   };
 
-  // Fetch notifications from API
-  const fetchNotifications = async () => {
-    try {
-      setLoading(true);
-      const response = await notificationApi.getMyNotifications();
-      setNotifications(response || []);
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Mark notification as read
-  const markAsRead = async (id: number) => {
-    try {
-      await notificationApi.markAsRead(id);
-      // Update local state
-      setNotifications(prev => 
-        prev.map(n => n.id === id ? { ...n, status: 'READ' } : n)
-      );
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
-    }
-  };
-
-  // Fetch notifications on mount and when opening popup
-  useEffect(() => {
-    fetchNotifications();
-    // Poll every 30 seconds
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Load user name/role from token to mirror Admin style
   useEffect(() => {
     const token = sessionStorage.getItem('token');
     if (!token) return;
@@ -231,7 +197,7 @@ export default function Reader() {
   const handleUserMenuClose = () => setUserMenuAnchor(null);
   const handleNotificationClick = (event: React.MouseEvent<HTMLElement>) => {
     setNotificationAnchor(event.currentTarget);
-    fetchNotifications(); // Refresh notifications when opening
+    fetchNotifications(); 
   };
   const handleNotificationClose = () => setNotificationAnchor(null);
 
@@ -253,7 +219,7 @@ export default function Reader() {
     <Box sx={{ display: 'flex' }}>
       {/* Sidebar */}
       <StyledDrawer variant="permanent">
-  <LogoContainer onClick={() => navigate('/reader')}>
+      <LogoContainer onClick={() => navigate('/reader')}>
           <LogoImage src={logoImage} alt="Logo" />
           <LogoText variant="h6">PTIT Library</LogoText>
         </LogoContainer>
@@ -354,43 +320,36 @@ export default function Reader() {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
-        <List sx={{ width: 350, maxHeight: 450, overflow: 'auto', padding: 0 }}>
-          {loading ? (
-            <ListItem>
-              <ListItemText primary="Đang tải thông báo..." />
-            </ListItem>
-          ) : notifications.length === 0 ? (
-            <ListItem>
-              <ListItemText primary="Không có thông báo mới" />
-            </ListItem>
+        <List sx={{ width: 320, maxHeight: 400, overflowY: 'auto', p: 1 }}>
+          {notifications.length === 0 ? (
+            <Typography sx={{ p: 2, textAlign: 'center', color: 'gray' }}>
+              Không có thông báo
+            </Typography>
           ) : (
-            notifications.map((n) => (
-              <ListItem 
-                key={n.id}
-                onMouseEnter={() => {
-                  if (n.status !== 'READ') {
-                    markAsRead(n.id);
-                  }
-                }}
+            notifications.map((noti: any) => (
+              <ListItem
+                key={noti.id}
                 sx={{
-                  backgroundColor: n.status === 'READ' ? 'transparent' : 'rgba(91, 110, 245, 0.08)',
-                  borderBottom: '1px solid rgba(0,0,0,0.08)',
+                  borderRadius: 2,
+                  mb: 1,
+                  backgroundColor: noti.status === 'READ' ? '#fff' : 'rgba(255,107,107,0.1)',
+                  '&:hover': { backgroundColor: 'rgba(255,107,107,0.2)' },
                   cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    backgroundColor: 'rgba(91, 110, 245, 0.12)',
-                  }
+                }}
+                onClick={() => {
+                  console.log('Title:', noti.title);
+                  console.log('Body:', noti.body);
+                  // Optional: đánh dấu đã đọc
+                  notificationApi.markAsRead?.(noti.id);
+                  fetchNotifications();
                 }}
               >
-                <ListItemText 
-                  primary={n.message}
-                  secondary={new Date(n.createdAt).toLocaleString('vi-VN')}
-                  primaryTypographyProps={{
-                    fontWeight: n.status === 'READ' ? 400 : 600,
-                    fontSize: '0.95rem',
-                  }}
-                  secondaryTypographyProps={{
-                    fontSize: '0.75rem',
+                <ListItemText
+                  primary={noti.title}
+                  secondary={noti.body}
+                  sx={{
+                    '& .MuiListItemText-primary': { fontWeight: noti.status === 'READ' ? 400 : 600 },
+                    '& .MuiListItemText-secondary': { color: '#555' },
                   }}
                 />
               </ListItem>

@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useState, useCallback, useMemo } from "react";
+import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from "react";
 import { publicBooksApi, staffBooksApi } from "../../api";
 import { toDriveImageUrl, toDrivePdfPreviewUrl, toDriveThumbnailUrl } from "../../utils/driveLinks";
-
+import type { BookSearchQuery ,BookSearchResponse } from "../../types/api.types";
 // UI-facing book shape used across components
 export interface Book {
   id: number;
@@ -15,6 +15,9 @@ export interface Book {
   quantity: number;
   pdfUrl?: string | null;
   coverPhotoUrl?: string | null;
+  // ⭐ Thêm
+  averageRating?: number | null;   
+  ratingCount?: number | null;     
 }
 
 export interface BookCreate {
@@ -28,17 +31,28 @@ export interface BookCreate {
   status: string;
   pdfUrl?: string | null;
   coverPhotoUrl?: string | null;
+  // ⭐ Thêm
+  averageRating?: number | null;
+  ratingCount?: number | null;    
 }
+
 
 interface BookContextType {
   books: Book[];
   loading: boolean;
   error: string | null;
+
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  pageSize: number;
+
   fetchBookById: (id: number) => Promise<Book | null>;
   refreshBooks: () => Promise<void>;
   addBook: (book: Omit<BookCreate, "id">) => Promise<void>;
   updateBook: (id: number, data: Partial<BookCreate>) => Promise<void>;
   deleteBook: (id: number) => Promise<void>;
+  changePage: (page: number) => Promise<void>;
 }
 
 const BookContext = createContext<BookContextType | undefined>(undefined);
@@ -48,15 +62,25 @@ export const BookProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [searchQuery, setSearchQuery] = useState<BookSearchQuery>({});
+  const [currentPage, setCurrentPage] = useState<number>(0);
+  const [totalPages, setTotalPages] = useState<number>(0);
+  const [totalItems, setTotalItems] = useState<number>(0);
+  const [pageSize, setPageSize] = useState<number>(10);
+
   //Goi api de lay tat ca sach
-  const fetchBooks = useCallback(async () => {
+  const fetchBooks = useCallback(async (page = currentPage) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await publicBooksApi.searchBooks({ page: 0, size: 1000 } as any);
-      // Support both array and paginated shape { items, totalItems, ... }
-      const items: any[] = Array.isArray(res) ? (res as any[]) : ((res as any)?.items ?? []);
-      // Map API book shape to UI book shape safely
+      const res = await publicBooksApi.searchBooks(
+        searchQuery,     // ← query object
+        page,            // ← page (không cần -1 nữa, backend thường dùng 0-based hoặc 1-based)
+        pageSize
+      );
+      
+      const { items, currentPage: pageFromApi, totalPages, totalItems, pageSize: sizeFromApi } = res as BookSearchResponse;
+
       const mapped = items.map((b: any) => ({
         id: b.id,
         title: b.title,
@@ -65,16 +89,30 @@ export const BookProvider: React.FC<{ children: React.ReactNode }> = ({ children
         publishYear: b.publishedYear ?? b.publishYear,
         status: b.status ?? undefined,
         quantity: b.quantity ?? b.availableQuantity ?? 0,
-  pdfUrl: toDrivePdfPreviewUrl(b.pdfUrl ?? null),
-  coverPhotoUrl: toDriveThumbnailUrl(b.coverPhotoUrl ?? b.coverImage ?? null, 256) || toDriveImageUrl(b.coverPhotoUrl ?? b.coverImage ?? null),
+        pdfUrl: toDrivePdfPreviewUrl(b.pdfUrl ?? null),
+        coverPhotoUrl: toDriveThumbnailUrl(b.coverPhotoUrl ?? b.coverImage ?? null, 256) || toDriveImageUrl(b.coverPhotoUrl ?? b.coverImage ?? null),
+        // ⭐ Thêm 2 dòng này:
+        averageRating: b.averageRating ?? null,
+        ratingCount: b.ratingCount ?? null,
       })) as Book[];
       setBooks(mapped);
+
+      setCurrentPage(pageFromApi ?? page);
+      setPageSize(sizeFromApi);
+      setTotalItems(totalItems);
+      setTotalPages(totalPages);
+      
     } catch (err: any) {
       setError(err.message || "Không thể tải danh sách sách");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [pageSize]);
+
+  const changePage = useCallback(async (page: number) => {
+    console.log("📖 Changing page to:", page);
+    await fetchBooks(page);
+  }, [fetchBooks]);
 
   //goi api lay 1 sach theo id
   const fetchBookById = useCallback(async (id: number): Promise<Book | null> => {
@@ -88,8 +126,11 @@ export const BookProvider: React.FC<{ children: React.ReactNode }> = ({ children
         publishYear: b.publishedYear ?? b.publishYear,
         status: b.status ?? undefined,
         quantity: b.quantity ?? b.availableQuantity ?? 0,
-  pdfUrl: toDrivePdfPreviewUrl(b.pdfUrl ?? null),
-  coverPhotoUrl: toDriveThumbnailUrl(b.coverPhotoUrl ?? b.coverImage ?? null, 512) || toDriveImageUrl(b.coverPhotoUrl ?? b.coverImage ?? null),
+        pdfUrl: toDrivePdfPreviewUrl(b.pdfUrl ?? null),
+        coverPhotoUrl: toDriveThumbnailUrl(b.coverPhotoUrl ?? b.coverImage ?? null, 512) || toDriveImageUrl(b.coverPhotoUrl ?? b.coverImage ?? null),
+        // ⭐ Thêm 2 dòng này:
+        averageRating: b.averageRating ?? null,
+        ratingCount: b.ratingCount ?? null,
       };
       return mapped;
     } catch (err) {
@@ -101,18 +142,17 @@ export const BookProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // fetch thong tin all sach
   // ❌ REMOVED: Auto-fetch on mount causes slow initial load
-  // useEffect(() => {
-  //   fetchBooks();
-  // }, []);
+  useEffect(() => {
+    fetchBooks();
+  }, []);
 
   // ✅ Instead: Components should call refreshBooks() when needed
-
 
   const addBook = useCallback(async (book: Omit<BookCreate, "id">) => {
     try {
       const res = await staffBooksApi.createBook(book as any);
       setBooks((prev) => [...prev, res as any]);
-    } catch(err) {
+    } catch (err) {
       console.error("Add error:", err);
       alert("Không thể thêm sách (có thể bạn chưa có quyền)");
     }
@@ -121,10 +161,10 @@ export const BookProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateBook = useCallback(async (id: number, data: Partial<BookCreate>) => {
     try {
       const res = await staffBooksApi.updateBook(id, data as any);
-      setBooks((prev) => 
-        prev.map((b) => (b.id === id ? {...b, ...res as any} : b))
+      setBooks((prev) =>
+        prev.map((b) => (b.id === id ? { ...b, ...res as any } : b))
       );
-    } catch(err) {
+    } catch (err) {
       console.error("Update error:", err);
       alert("Không thể cập nhật sách (có thể bạn chưa có quyền");
     }
@@ -134,7 +174,7 @@ export const BookProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await staffBooksApi.deleteBook(id);
       setBooks((prev) => prev.filter((b) => b.id != id));
-    } catch (err){
+    } catch (err) {
       console.error("Delete error:", err);
       alert("Không thể xóa sách (có thể bạn chưa có quyền");
     }
@@ -145,12 +185,16 @@ export const BookProvider: React.FC<{ children: React.ReactNode }> = ({ children
     books,
     loading,
     error,
+    currentPage, 
+    pageSize, 
+    totalItems, totalPages,
     refreshBooks: fetchBooks,
     fetchBookById,
     addBook,
     updateBook,
     deleteBook,
-  }), [books, loading, error, fetchBooks, fetchBookById, addBook, updateBook, deleteBook]);
+    changePage,
+  }), [books, loading, error, currentPage, pageSize, totalItems, totalPages, fetchBooks, fetchBookById, addBook, updateBook, deleteBook, changePage]);
 
   return (
     <BookContext.Provider value={value}>

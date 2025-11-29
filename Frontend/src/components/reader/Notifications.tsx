@@ -3,10 +3,26 @@ import { FaBell, FaCheckCircle, FaEnvelopeOpen, FaEnvelope } from "react-icons/f
 import { useNotifications } from "../context/NotificationContext";
 import "./Notifications.css";
 
-function formatDate(arr?: number[] | null) {
-  if (!arr) return "";
-  const [y, m, d, hh = 0, mm = 0] = arr;
-  return `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${y} ${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+function formatDateNotification(arr?: number[] | null): string {
+  console.log("formatDateNotification called with:", arr); 
+  if (!arr || arr.length < 6) return "Chưa có thời gian";
+
+  const [year, month, day, hour = 0, minute = 0, second = 0] = arr;
+
+  // ĐÚNG: Trừ 1 cho tháng
+  const date = new Date(year, month - 1, day, hour, minute, second);
+
+  // Nếu ngày không hợp lệ (rất hiếm)
+  if (isNaN(date.getTime())) return "Ngày không hợp lệ";
+
+  return date.toLocaleString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
 }
 
 const Notifications: React.FC = () => {
@@ -17,13 +33,14 @@ const Notifications: React.FC = () => {
     markAsRead,
     markAllAsRead,
     refreshNotifications,
+    fetchNotifications,
   } = useNotifications();
 
-  // Fetch notifications when component mounts
   useEffect(() => {
-    refreshNotifications();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    fetchNotifications();
   }, []);
+
+  
 
   return (
     <div className="notifications-wrapper">
@@ -59,7 +76,7 @@ const Notifications: React.FC = () => {
               <p className="notifications-body">{n.body}</p>
               <div className="notifications-meta">
                 <span>👤 {n.senderName}</span>
-                <span>⏰ {formatDate(n.sentAt)}</span>
+                <span>⏰ {formatDateNotification(n.sentAt)}</span>
               </div>
             </div>
             {n.status === "UNREAD" && <span className="notifications-badge">Mới</span>}

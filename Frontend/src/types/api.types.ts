@@ -96,6 +96,14 @@ export interface BookSearchQuery {
   size?: number;
 }
 
+export interface BookSearchResponse {
+  items: Book[];        
+  currentPage: number; 
+  pageSize: number;     
+  totalItems: number;   
+  totalPages: number;  
+}
+
 export interface CreateBookRequest {
   title: string;
   isbn: string;
@@ -107,6 +115,21 @@ export interface CreateBookRequest {
   description?: string;
   coverImage?: string;
 }
+
+export interface CreateRatingRequest {
+  bookId: number;
+  score: number; // 1 đến 5
+}
+
+export interface RatingResponse {
+  id: number;
+  userId: number;
+  bookId: number;
+  score: number;
+  createdAt: string | null;
+  updateAt: string | null;
+}
+
 
 export interface UpdateBookRequest extends Partial<CreateBookRequest> {}
 
@@ -216,11 +239,12 @@ export interface PublicCommentList {
 // ============================================
 export interface Notification {
   id: number;
-  userId: number;
   title: string;
   body: string;
   status: 'UNREAD' | 'READ';
-  createdAt: string;
+  sentAt: number[];     
+  senderName: string;
+  recipientName: string;
 }
 
 export interface SendNotificationRequest {

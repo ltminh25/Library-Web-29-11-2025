@@ -60,7 +60,7 @@ const OverdueList: React.FC = () => {
     fetchOverdueTransactions();
   }, []);
 
-  const formatDate = (arr: number[] | null) => {
+  const formatDateOverdue = (arr: number[] | null) => {
     if (!arr) return "—";
     const [y, m, d, h = 0, min = 0] = arr;
     return `${d.toString().padStart(2, "0")}/${m.toString().padStart(
@@ -222,10 +222,10 @@ const OverdueList: React.FC = () => {
                     {t.staffName}
                   </TableCell>
                   <TableCell sx={{ fontFamily: 'Roboto, sans-serif', color: '#718096' }}>
-                    {formatDate(t.borrowDate)}
+                    {formatDateOverdue(t.borrowDate)}
                   </TableCell>
                   <TableCell sx={{ fontFamily: 'Roboto, sans-serif', color: '#718096' }}>
-                    {formatDate(t.dueDate)}
+                    {formatDateOverdue(t.dueDate)}
                   </TableCell>
                   <TableCell>
                     <Chip 
