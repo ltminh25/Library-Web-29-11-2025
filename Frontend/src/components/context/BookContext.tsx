@@ -9,6 +9,7 @@ export interface Book {
   author: string;
   // description?: string;
   category: string;
+  publisher: string;
   // rating?: number;
   publishYear?: number;
   status?: string;
@@ -86,6 +87,7 @@ export const BookProvider: React.FC<{ children: React.ReactNode }> = ({ children
         title: b.title,
         author: typeof b.author === 'string' ? b.author : (b.author?.name ?? ''),
         category: typeof b.category === 'string' ? b.category : (b.category?.name ?? ''),
+        publisher: typeof b.publisher === 'string' ? b.publisher : (b.publisher?.name ?? ''),
         publishYear: b.publishedYear ?? b.publishYear,
         status: b.status ?? undefined,
         quantity: b.quantity ?? b.availableQuantity ?? 0,
@@ -96,7 +98,7 @@ export const BookProvider: React.FC<{ children: React.ReactNode }> = ({ children
         ratingCount: b.ratingCount ?? null,
       })) as Book[];
       setBooks(mapped);
-
+      
       setCurrentPage(pageFromApi ?? page);
       setPageSize(sizeFromApi);
       setTotalItems(totalItems);
@@ -114,7 +116,6 @@ export const BookProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await fetchBooks(page);
   }, [fetchBooks]);
 
-  //goi api lay 1 sach theo id
   const fetchBookById = useCallback(async (id: number): Promise<Book | null> => {
     try {
       const b: any = await publicBooksApi.getBookById(id);
@@ -123,6 +124,7 @@ export const BookProvider: React.FC<{ children: React.ReactNode }> = ({ children
         title: b.title,
         author: typeof b.author === 'string' ? b.author : (b.author?.name ?? ''),
         category: typeof b.category === 'string' ? b.category : (b.category?.name ?? ''),
+        publisher: typeof b.publisher === 'string' ? b.publisher : (b.publisher?.name ?? ''),
         publishYear: b.publishedYear ?? b.publishYear,
         status: b.status ?? undefined,
         quantity: b.quantity ?? b.availableQuantity ?? 0,

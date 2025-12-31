@@ -16,6 +16,7 @@ public class BookResponse {
     private String status;
     private int publishYear;
     private String category;
+    private String publisher;
     private String author;
     private String pdfUrl;
     private String coverPhotoUrl;

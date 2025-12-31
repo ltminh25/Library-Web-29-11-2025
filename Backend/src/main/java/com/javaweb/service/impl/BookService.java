@@ -172,6 +172,9 @@ public class BookService implements IBookService {
         Optional.ofNullable(book.getCategory())
                 .map(Category::getName)
                 .ifPresent(response::setCategory);
+        Optional.ofNullable(book.getPublisher())
+                .map(Publisher::getName)
+                .ifPresent(response::setPublisher);
         return response;
     }
 

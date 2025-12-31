@@ -110,10 +110,9 @@ const BookManagement = () => {
       setEditingBookId(bookToEdit.id);
       setFormData({
         title: bookToEdit.title,
-        // map theo tên sang id nếu có dữ liệu; nếu không, để 0 và người dùng chọn lại
         author_id: authors.find(a => a.name === bookToEdit.author)?.id || 0,
         category_id: categories.find(cat => cat.name === bookToEdit.category)?.id || 0,
-        publish_id: 0,
+        publish_id: publishers.find(p => p.name === bookToEdit.publisher)?.id || 0,
         publishYear: bookToEdit.publishYear,
         quantity: bookToEdit.quantity,
         status: bookToEdit.status,
